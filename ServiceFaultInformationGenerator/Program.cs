@@ -20,6 +20,8 @@ namespace ServiceFaultInformationGenerator
 <!-- MAP -->
 </urlset>";
 
+        private static readonly string AppDir = AppDomain.CurrentDomain.BaseDirectory;
+
         public static void Main(string[] args)
         {
             if (args.Length < 1)
@@ -34,11 +36,44 @@ namespace ServiceFaultInformationGenerator
                     BuildSite();
                     break;
 
+                case "init":
+                    if (args.Length != 2)
+                    {
+                        Console.Error.WriteLine("No args found");
+                        Environment.Exit(1);
+                        break;
+                    }
+                    if (!Directory.Exists(Directory.GetParent(args[1]).FullName))
+                    {
+                        Console.Error.WriteLine("No directory found");
+                        Environment.Exit(6);
+                        break;
+                    }
+                    if (File.Exists(args[1]) || Directory.Exists(args[1]))
+                    { 
+                        Console.Error.WriteLine("Directory already found");
+                        Environment.Exit(7);
+                        break;
+                    }
+                    {
+                        Directory.CreateDirectory(args[1]);
+                        Directory.CreateDirectory(Path.Combine(args[1], "reports"));
+                        CopyFromTemplateDir(args[1], "siteconfig.yaml");
+                        CopyFromTemplateDir(args[1], "template.html");
+                        CopyFromTemplateDir(args[1], "template.index.html");
+                    }
+                    break;
+
                 default:
                     Console.Error.WriteLine("No command found");
                     Environment.Exit(2);
                     break;
             }
+        }
+
+        private static void CopyFromTemplateDir(string destdir, string name)
+        { 
+            File.Copy(Path.Combine(AppDir, "template",  name), Path.Combine(destdir, name));
         }
 
         public static void BuildSite()
@@ -86,7 +121,7 @@ namespace ServiceFaultInformationGenerator
 
             foreach (var f in Directory.GetFiles(srcdir, "*.*", SearchOption.AllDirectories))
             { 
-                if (!f.EndsWith(".txt") && !f.EndsWith("*.md"))
+                if (!f.EndsWith(".txt") && !f.EndsWith(".md"))
                     continue;
 
                 string relation = f.Substring(Path.Combine(srcdir, "a").TrimEnd('a').Length);
@@ -103,12 +138,13 @@ namespace ServiceFaultInformationGenerator
 
         public static ReportMetadata GeneratePage(string projdir, string srcfile, string outplace, string templatehtml)
         {
-            Console.WriteLine(outplace);
-
             string actoutpath = Path.Combine(projdir, "out", outplace);
             Directory.CreateDirectory(Directory.GetParent(actoutpath).FullName);
 
             string mdcontent = File.ReadAllText(srcfile, System.Text.Encoding.UTF8);
+
+            mdcontent = mdcontent.Replace("\r\n", "\n");
+
             MarkdownPipeline pipe = new MarkdownPipelineBuilder()
                 .UseYamlFrontMatter()
                 .UseCustomContainers()
@@ -118,6 +154,7 @@ namespace ServiceFaultInformationGenerator
             string mdhtml = document.ToHtml(pipe);
 
             ReportMetadata meta;
+
 
             using (var input = new StringReader(mdcontent))
             {
