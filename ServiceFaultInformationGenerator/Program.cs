@@ -195,6 +195,12 @@ namespace ServiceFaultInformationGenerator
 
                 indexhtmls.Add($"<tr><td>{i.Item1.UpdateDate ?? i.Item1.Date:yyyy-MM-dd}</td><td><a href=\"{i.Item2 + ".html"}\">{i.Item1.Title}</a></td></tr>");
             }
+
+            sitemaps.Add(new Url() {
+                Location = $"{sconf.BaseUrl}index.html",
+                LastMod = $"{DateTime.Now:yyyy-MM-dd}"
+            });
+
             var sitemappath = Path.Combine(projdir, "out", "sitemap");
             Directory.CreateDirectory(sitemappath);
             sitemaps.SaveToDirectory(sitemappath);
