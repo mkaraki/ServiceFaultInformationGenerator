@@ -182,7 +182,7 @@ namespace ServiceFaultInformationGenerator
 
             List<string> indexhtmls = new();
 
-            foreach (var i in files)
+            foreach (var i in files.OrderByDescending(v => v.Item1.UpdateDate ?? v.Item1.Date))
             {
                 string webrel = i.Item2
                     .Replace('\\', '/')
